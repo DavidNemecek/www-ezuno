@@ -11,6 +11,7 @@ import time
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
+from static_forms import reconstruct_forms
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / '.mirror'
@@ -190,6 +191,26 @@ def build_page(name):
             tag['style'] = CSS_URL.sub(lambda m: 'url("' + relative(asset(m.group(1), origin), page) + '")', tag['style'])
         if tag.name == 'a' and tag.has_attr('href'):
             tag['href'] = page_link(tag['href'], page, origin)
+            # Every free-license CTA belongs to the trial form, including ones
+            # previously pointing to Contact. Standalone sections have no such
+            # anchor, so link back to the homepage when necessary.
+            text = tag.get_text(' ', strip=True)
+            if (text.upper() == 'GET 10 USERS FREE' or (
+                    name == 'download' and text == 'here.' and tag['href'].endswith('#clients'))):
+                tag['href'] = ('' if soup.find(id='subscribe') else relative('index.html', page)) + '#subscribe'
+    # Replace unavailable WordPress form shortcodes with usable static forms.
+    if reconstruct_forms(soup, page):
+        soup.head.append(soup.new_tag('link', rel='stylesheet', href=relative('assets/forms.css', page)))
+        form_script = soup.new_tag('script', src=relative('assets/forms.js', page))
+        form_script['defer'] = ''
+        soup.head.append(form_script)
+        # The theme removes its fullscreen loader using JavaScript. Without
+        # scripting it must not cover the forms and their direct email fallback.
+        no_script = soup.new_tag('noscript')
+        no_script_style = soup.new_tag('style')
+        no_script_style.string = '#preloader { display: none !important; }'
+        no_script.append(no_script_style)
+        soup.head.append(no_script)
     # CSS and markup from the original are retained; this small adapter only
     # supplies browser storage on file:// and normalizes the theme's navigation.
     adapter = soup.new_tag('script', src=relative('assets/static.js', page))

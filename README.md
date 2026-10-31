@@ -43,9 +43,19 @@ sind relativ und funktionieren auch unter einem GitHub-Pages-Unterverzeichnis.
 
 ## Verhalten des Originals
 
-Die Kontakt- und Lizenzbereiche zeigen bereits auf der Originalseite sichtbare
-`[contact-form-7 …]`-Platzhalter. Diese Momentaufnahme erhält diesen Zustand.
-Es gibt deshalb auch hier keinen Formularversand. Der Blog-Link und der alte
+Die ursprünglich defekten `[contact-form-7 …]`-Platzhalter wurden am
+31. Oktober 2026 durch statische Formulare für die kostenlose Lizenz,
+Kontakt/Angebote und Support ersetzt. Sie prüfen Pflichtfelder und E-Mail-Adresse
+und öffnen einen vorausgefüllten Entwurf an **ezuno@ezuno.com** im Mailprogramm.
+Die Anfrage wird erst dort durch den Besucher versendet. Falls kein Mailprogramm
+eingerichtet ist, kann der vollständige Entwurf kopiert werden. Es gibt keinen
+Formularserver, keine Speicherung der Eingaben und keinen automatischen
+Lizenzversand. Die ursprünglichen Formularfelder sind aus den kaputten
+Platzhaltern nicht wiederherstellbar; die neuen Felder wurden anhand des
+jeweiligen Anfragezwecks rekonstruiert. Die Links zur kostenlosen Lizenz führen
+direkt zum Formular.
+
+Der Blog-Link und der alte
 `/terms-of-use`-Link innerhalb der Datenschutzerklärung zeigen die Fehlerseite
 des Originals. Die aktuelle Nutzungsbedingungen-Seite ist separat enthalten.
 
