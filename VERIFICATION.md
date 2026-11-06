@@ -86,8 +86,24 @@ verglichen. Der Export `.mirror/rebuild/ezuno-static-clean.zip` besteht ebenfall
 die CRC-Prüfung und enthält den vollständigen Installer, keine SQL-/PHP-Dateien,
 Backups, Git-Daten, Quellteile oder Entwicklungswerkzeuge.
 
-Diese Prüfungen belegen den lokalen Build. Ein erfolgreicher Live-Download
-wird erst nach dem GitHub-Pages-Deployment gesondert bestätigt.
+Der direkte Pages-Download wurde nach erfolgreichem
+[Deployment](https://github.com/fawhgb/www-ezuno/actions/runs/42246879284)
+auch live bestätigt: HTTP-HEAD liefert 200 und exakt 411.970.655 Bytes;
+ein Teilabruf liefert 206 und den korrekten ZIP-Dateianfang. Die Prüfsumme
+ist ebenfalls öffentlich erreichbar. **69/69 veröffentlichte Ressourcen**,
+darunter alle 20 HTML-Seiten, stimmen mit dem geprüften Build überein
+(Text-Zeilenumbrüche normalisiert). Der nicht öffentlich ausgelieferte
+`.nojekyll`-Deploymentmarker ist kein Website-Linkziel und ausgenommen.
+Nachweise: `.mirror/rebuild/live-download-check.json` und `live-site-check.json`.
+
+**Offen ist HTTPS der eigenen Domain:** GitHub meldet für `www.ezuno.com`
+den Zertifikatsstatus `new`; HTTPS scheitert derzeit am Hostnamen des
+Zertifikats. Die erfolgreichen Live-Checks oben verwenden deshalb ausdrücklich
+HTTP. DNS zeigt auf GitHub Pages. Der verfügbare GitHub-Zugang hat Schreibrechte,
+aber keine Rechte zum Ändern der Pages-/HTTPS-Einstellungen.
+Der Betreiber hat die Pages-Quelle auf `GitHub Actions` umgestellt;
+die API bestätigt `build_type: workflow`. Der eigene Workflow veröffentlicht
+die geprüfte Website einschließlich zusammengesetztem Download.
 
 ## Video und Prüfgrenzen
 
