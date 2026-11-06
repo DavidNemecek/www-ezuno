@@ -6,6 +6,7 @@ import shutil
 import tempfile
 
 from package_download import FILENAME, assemble
+from check_licenses import check_licenses
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / '_site'
@@ -52,6 +53,7 @@ def build():
             destination = stage / source.relative_to(ROOT)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
+        check_licenses(stage, PAGE_FILES)
         assemble(stage / 'releases' / FILENAME)
         size = sum(path.stat().st_size for path in stage.rglob('*') if path.is_file())
         if size >= 1024 * 1024 * 1024:

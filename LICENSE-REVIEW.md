@@ -22,10 +22,24 @@ oder Textsymbole innerhalb des Stylesheets. Es gibt keine Laufzeitbibliothek.
 Die wiederverwendeten englischen Firmeninhalte und die HTML-Inhaltsstruktur
 bleiben erhalten. Für die von KeySoft übernommene HTML-Hülle bleiben der
 Herkunftshinweis, das Änderungsdatum und der originale GPL-v3-Lizenztext erhalten;
-die direkt gepflegten HTML-Dateien sind ihre bearbeitbare Quellform. Damit wird
+die bearbeitete HTML-Templatestruktur einschließlich unserer Änderungen wird
+ausdrücklich unter GPL-3.0-only weitergegeben. Die direkt gepflegten HTML-Dateien
+sind ihre bearbeitbare Quellform. Damit wird
 die HTML-Ausgabe nicht als vollständig neu geschriebene Vorlage ausgegeben.
 Eine neue Implementierung allein würde fremde Bildrechte oder sonstige Rechte
 an Inhalten nicht aufheben.
+
+Beide Fassungen der Website-Nutzungsbedingungen nehmen gesondert lizenzierte
+Bestandteile ausdrücklich von den allgemeinen Copyright-Beschränkungen aus
+und erklären den Vorrang ihrer jeweiligen Lizenzen. Die Lizenzhinweise sind
+aus diesem Abschnitt verlinkt. Der Pflegelauf erhält diese Ausnahme und die
+explizite GPL-Zuordnung in allen HTML-Seiten.
+
+`python tools/check_licenses.py` prüft diese Zuordnung, die Ausnahmen in beiden
+Nutzungsbedingungen, die unveränderten Lizenztexte und Schriftdateien sowie
+den Bestand der ausgelieferten Skripte und Stylesheets. Der Website-Build
+führt diese Prüfung auch am fertig zusammengestellten Veröffentlichungsbestand
+aus und bricht bei einem Fehler vor der Veröffentlichung ab.
 
 ## Verbleibende Ressourcen
 

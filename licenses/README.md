@@ -6,13 +6,23 @@ Die Inhalte wurden aus der bisherigen statischen WordPress-Ausgabe übernommen.
 Für die beibehaltene HTML-Hülle wird der Herkunftshinweis auf KeySoft von
 Key-Design erhalten; das Original bezeichnet sich in `style.css` als GNU GPL
 und verweist auf die beiliegende [GPL Version 3](KeySoft-GPL-3.0.txt).
-Die HTML-Dateien sind die direkt bearbeitete Quellform und enthalten einen
-Herkunfts- und Änderungshinweis vom 6. November 2026. Die zugehörigen Theme-
-Stylesheets und -Skripte werden nicht mehr verwendet.
+Die übernommene und bearbeitete HTML-Templatestruktur einschließlich unserer
+Änderungen daran wird unter der **GNU General Public License, Version 3
+(SPDX: GPL-3.0-only)** weitergegeben. Der vollständige Lizenztext liegt als
+[`KeySoft-GPL-3.0.txt`](KeySoft-GPL-3.0.txt) bei. Die Lizenz erlaubt Nutzung,
+Änderung und Weitergabe nach ihren Bedingungen, auch für kommerzielle Zwecke.
+Die HTML-Dateien sind die direkt bearbeitete Quellform und enthalten jeweils
+den Herkunfts-, Änderungs- und Lizenzhinweis vom 6. November 2026. Es gibt keine
+zusätzliche, nur intern vorgehaltene Template-Quellform.
 
-Diese Herkunftsangabe lizenziert nicht pauschal unabhängige Firmentexte,
-Produktbilder, Kundenlogos oder Personenfotos unter GPL. Sie bezieht sich auf
-gegebenenfalls von der ursprünglichen Theme-Lizenz erfasste HTML-Struktur.
+Die eigenständigen Firmentexte, Produktbilder, Kundenlogos und Personenfotos
+sind davon getrennte Inhalte; diese Erklärung erteilt keine zusätzlichen
+Nutzungsrechte daran. Auch die unabhängig neu geschriebenen Dateien
+`assets/site.css` und `assets/site.js` werden mit dieser Erklärung nicht unter
+GPL gestellt. Die zugehörigen alten Theme-Stylesheets und -Skripte werden
+nicht mehr verwendet. Die Schriftdateien unterliegen ausschließlich ihrer
+unten genannten OFL-Lizenz. Bei den jeweils gesondert lizenzierten Bestandteilen
+gehen deren Lizenzen den allgemeinen Website-Nutzungsbedingungen vor.
 
 ## Schriften
 

@@ -129,9 +129,13 @@ def modernize_page(page):
         node.extract()
     soup.head.insert(0, Comment(
         ' HTML structure adapted from KeySoft by Key-Design; modified 2026-11-06. '
-        'Applicable original GPLv3 notice: ' + relative('licenses/KeySoft-GPL-3.0.txt', page) +
+        'The adapted HTML template structure, including our modifications to it, '
+        'is licensed under the GNU General Public License, version 3 (GPL-3.0-only); see ' +
+        relative('licenses/KeySoft-GPL-3.0.txt', page) +
         '. Company text/media and the new independent CSS/JS are separate works; see ' +
         relative('licenses/README.md', page) + '. '))
+    if page in ('terms-of-use/index.html', 'our-terms-of-use/index.html'):
+        apply_third_party_license_exception(soup, page)
     for selector in ['#preloader', '#cookie-law-info-bar', '#cookie-law-info-again',
                      '#cliSettingsPopup', '.cli-modal-backdrop']:
         for tag in list(soup.select(selector)):
@@ -186,6 +190,36 @@ def modernize_page(page):
     script['defer'] = ''
     soup.head.append(script)
     path.write_text(str(soup).rstrip() + '\n', encoding='utf-8')
+
+
+def apply_third_party_license_exception(soup, page):
+    """Keep the proprietary-content terms separate from GPL/OFL permissions."""
+    heading = next((tag for tag in soup.find_all(['h2', 'h3', 'h4'])
+                    if tag.get_text(' ', strip=True) == 'Copyrights'), None)
+    if heading is None:
+        raise ValueError(f'{page}: missing Copyrights section')
+    notice = soup.find(id='third-party-licenses')
+    if notice is None:
+        notice = soup.new_tag('p', id='third-party-licenses')
+    notice.clear()
+    notice.append(
+        'The restrictions in this Copyrights section apply only to Materials '
+        'that are not governed by a separate license. Third-party and open-source '
+        'components, including the adapted GPL-licensed HTML template structure '
+        'and the OFL-licensed fonts, are governed by their respective licenses. '
+        'Those licenses take precedence over these Terms for the relevant '
+        'components. Nothing in these Terms restricts rights granted under '
+        'those licenses. See the ')
+    link = soup.new_tag('a', href=relative('licenses/README.md', page))
+    link.string = 'licensing notices and component licenses'
+    notice.append(link)
+    notice.append('.')
+    heading.insert_after(notice)
+    # Updating this section is a new version of the public Terms.
+    for paragraph in soup.find_all('p'):
+        if paragraph.get_text(' ', strip=True).startswith('Last updated:'):
+            paragraph.string = 'Last updated: November 6th, 2026 (Version 1.2)'
+            break
 
 
 def referenced_assets(pages):

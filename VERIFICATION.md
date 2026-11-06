@@ -152,3 +152,32 @@ python tools\package_download.py assemble
 node --check assets\site.js
 python tools\export_site.py
 ```
+
+## Nachprüfung der Website-Lizenzen
+
+Die explizite GPL-Zuordnung der bearbeiteten Templatestruktur und die
+Ausnahme für gesonderte Lizenzen in beiden Nutzungsbedingungen wurden ergänzt.
+Der vollständige Browserlauf nach dieser Änderung besteht weiterhin
+**181/181 Prüfungen**, einschließlich aller 20 Seiten auf Desktop und Mobil,
+der Fälle ohne JavaScript und der Interaktionen. Der lokale Linklauf prüft
+jetzt 412 Ressourcenverweise und 167 Anker erfolgreich.
+
+`python tools/check_licenses.py` prüft alle 20 HTML-Lizenzhinweise, beide
+Ausnahmen in den Nutzungsbedingungen, die lokalen Verweise zur Lizenzübersicht,
+die drei unveränderten Lizenztexte und die fünf unveränderten Schriftdateien.
+Der Build ruft diese Prüfung am zusammengestellten Veröffentlichungsbestand
+auf. Der gebaute Bestand umfasst 71 Dateien und 414.584.031 Bytes einschließlich
+des unveränderten Installers.
+
+Zusätzlich wurde an temporären Kopien bestätigt, dass fehlender GPL-Text,
+eine entfernte Ausnahme in den Nutzungsbedingungen und eine veränderte
+Schriftdatei die Lizenzprüfung jeweils fehlschlagen lassen. Ein erneuter
+Pflegelauf verändert die bereits korrigierten HTML-Dateien nicht.
+
+Der Prüfer verwendet nur die Python-Standardbibliothek und läuft deshalb auch
+im bestehenden GitHub-Pages-Workflow ohne zusätzliche Build-Abhängigkeiten.
+Der eigenständige Aufruf für einen fertigen Build lautet:
+
+```powershell
+python tools\check_licenses.py --site _site
+```
