@@ -6,7 +6,7 @@ und unabhängige Inhalts-/Linkkontrolle.
 
 ## Ergebnis
 
-**179/179 Prüfungen bestanden.** Bericht:
+**181/181 Prüfungen bestanden.** Bericht:
 `.mirror/rebuild/review-runtime.json` (lokaler, nicht veröffentlichter Prüfcache).
 
 - 120 Seitenfälle: alle 20 HTML-Seiten bei 1440 und 390 Pixeln, jeweils über
@@ -15,6 +15,8 @@ und unabhängige Inhalts-/Linkkontrolle.
   Inhalte bleiben erreichbar.
 - 6 Interaktionsfälle: Feature-Tabs einschließlich Tastatur, Testimonials,
   FAQ, Navigation, Video-Dialog, Fokus und Links zwischen Seiten.
+- 2 Downloadfälle: sofortiger nativer Download, Mehrfachklicksperre und
+  Wiederfreigabe nach 15 echten Sekunden bei Desktop- und Mobilbreite.
 - 3 zusätzliche Gesamtprüfungen: Formularvorlagen, lokale Verweise und
   vollständiger Installer mit relativer URL, SHA-256 und HTTP-HEAD.
 - 10 Screenshots: Startbereich, Support, Kontakt, kostenlose Lizenz und
@@ -49,6 +51,30 @@ Vorlagen: [EMAIL-TEMPLATES.md](EMAIL-TEMPLATES.md);
 Originalfelder: [FORM-MAPPING.md](FORM-MAPPING.md).
 
 ## Dateien und Links
+
+### Rückmeldung und Klicksperre beim Download
+
+Der erste Klick löst den nativen Download sofort aus. Für 15 Sekunden zeigt
+der Button „Der Download wird gleich gestartet“ und blockiert weitere
+Aktivierungen; danach werden Beschriftung und Bedienbarkeit wiederhergestellt.
+Der Timer beginnt beim ersten Klick und bleibt unabhängig von der tatsächlichen
+Übertragungsdauer. Die übrigen Links, einschließlich Prüfsummen-Download,
+erhalten keine Sperre.
+
+Zwei Browserfälle (Desktop/HTTP und Mobil/Projektunterverzeichnis) bestätigen
+jeweils: erster Download nach 0,011 beziehungsweise 0,014 Sekunden, elf weitere
+Aktivierungen blockiert, Freigabe nach 15,022 beziehungsweise 15,019 Sekunden
+und ein erfolgreicher zweiter Download. Die Tests verwenden eine kleine ZIP
+am lokalen HTTP-Testserver; das echte Installationspaket wird dabei nicht
+übertragen. Die Darstellung des gesperrten Buttons wurde bei beiden Breiten
+visuell kontrolliert. Ohne JavaScript bleibt der ursprüngliche Download-Link
+verwendbar.
+
+Gezielt wiederholbar mit
+`.\.venv\Scripts\python.exe tools\verify_site.py --download-only`;
+Nachweis: `.mirror/rebuild/review-download-guard.json`.
+
+### Ressourcen
 
 `tools/check_links.py` bestätigt **410 lokale Verweise und 167 Ankerlinks**
 in 20 HTML-Seiten; alle Ziele existieren. Keine PHP-Dateien vorhanden.

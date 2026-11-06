@@ -126,6 +126,7 @@ html:not(.js) #wrapper { padding-top: 0; }
 .header-dashboard img { width: min(100%, 523px); }
 .primary-button, .secondary-button, .ezuno-mail-button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; max-width: 100%; padding: 12px 25px; border: 2px solid var(--green); border-radius: 3px; background: var(--green); color: white; font-size: 13px; font-weight: 600; line-height: 1.4; letter-spacing: .045em; text-align: center; text-transform: uppercase; text-decoration: none; transition: background .15s, color .15s; }
 .primary-button:hover, .secondary-button:hover, .ezuno-mail-button:hover { background: var(--green-dark); border-color: var(--green-dark); color: white; text-decoration: none; }
+a[data-ezuno-download][aria-disabled="true"] { background: var(--green); border-color: var(--green); color: white; opacity: .65; cursor: wait; text-transform: none; }
 #header .primary-button { background: white; color: var(--navy); border-color: white; }
 #header .secondary-button { border-color: #ffffffbb; background: transparent; }
 #header .primary-button:hover, #header .secondary-button:hover { background: var(--navy); border-color: var(--navy); color: white; }

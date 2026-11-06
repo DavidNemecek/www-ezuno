@@ -23,6 +23,10 @@ Sie ist **411.970.655 Bytes** groß und unverändert aus dem bereitgestellten
 Installationspaket übernommen. Der Link benötigt weder JavaScript noch einen
 GitHub-Account und funktioniert in einem Pages-Projektunterverzeichnis.
 
+Nach dem ersten Klick startet der Download sofort. Der Button blockiert weitere
+Klicks für 15 Sekunden und zeigt dabei „Der Download wird gleich gestartet“.
+Danach sind die ursprüngliche Beschriftung und der Link wieder aktiv.
+
 GitHub erlaubt keine einzelnen Git-Dateien über 100 MiB. Deshalb liegt das
 Paket in `download-source/` in neun Teilen unter je 50 MiB. Der Pages-Build
 prüft alle Hashes und erzeugt daraus **eine vollständige ZIP-Datei**.

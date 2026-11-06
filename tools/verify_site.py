@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Exercise the maintained static site in Edge without contacting third parties."""
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import argparse
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -9,8 +11,10 @@ import re
 import subprocess
 import sys
 import threading
+import time
 from urllib.parse import parse_qs, unquote, urljoin, urlsplit
 from urllib.request import Request, urlopen
+from zipfile import ZipFile
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
@@ -23,6 +27,8 @@ EDGE = Path('C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe')
 
 
 class Handler(SimpleHTTPRequestHandler):
+    download_fixture = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
@@ -34,11 +40,31 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def do_GET(self):
+        fixture = Handler.download_fixture
+        if fixture and urlsplit(self.path).path.endswith('/releases/' + fixture['name']):
+            # Native Chromium downloads bypass Playwright page routing. Mock at
+            # the HTTP boundary so no part of the real installer is transferred.
+            fixture['requests'].append(time.monotonic())
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/zip')
+            self.send_header('Content-Disposition', 'attachment; filename="' + fixture['name'] + '"')
+            self.send_header('Content-Length', str(len(fixture['body'])))
+            self.end_headers()
+            self.wfile.write(fixture['body'])
+            return
+        super().do_GET()
+
 
 def main():
+    arguments = argparse.ArgumentParser(description=__doc__)
+    arguments.add_argument('--download-only', action='store_true', help='Run the native download cooldown checks without the full page matrix.')
+    options = arguments.parse_args()
     results = []
 
     def check(name, callback):
+        if name.startswith(('interactions:', 'download-click-guard:')):
+            print('RUN:', name, flush=True)
         try:
             detail = callback()
             results.append({'name': name, 'passed': True, 'detail': detail})
@@ -110,6 +136,8 @@ def main():
         browser = engine.chromium.launch(**browser_options)
         for width in [1440, 390]:
             for transport, base in bases.items():
+                if options.download_only and (transport, width) not in [('http', 1440), ('prefix', 390)]:
+                    continue
                 context = browser.new_context(viewport={'width': width, 'height': 900 if width == 1440 else 844}, reduced_motion='reduce')
                 context.route('https://**/*', lambda route: route.fulfill(status=200, content_type='text/html', body='<html><body>External video test frame</body></html>'))
                 context.route('http://**/*', lambda route: route.continue_() if urlsplit(route.request.url).hostname in ['127.0.0.1', 'localhost'] else route.abort())
@@ -121,7 +149,7 @@ def main():
                 page.on('pageerror', lambda error: errors.append(str(error)))
                 page.on('response', lambda response: failed.append(response.url) if response.status >= 400 else None)
 
-                for path in PAGES:
+                for path in ([] if options.download_only else PAGES):
                     external.clear()
                     errors.clear()
                     failed.clear()
@@ -207,6 +235,7 @@ def main():
                     require(frame.evaluate('(node)=>document.activeElement===node'), 'Video backwards focus trap failed')
                     for unused in range(5):
                         page.keyboard.press('Tab')
+                        page.wait_for_timeout(50)
                         require(page.evaluate('!document.hasFocus() || document.getElementById("video-modal").contains(document.activeElement)'), 'Video focus escaped to background page')
                     close.focus()
                     page.locator('.navbar-toggle').evaluate('(node)=>node.focus()')
@@ -235,8 +264,75 @@ def main():
                     }''')
                     return 'Tabs, keyboard, testimonials, FAQ, Vimeo modal/focus and cross-page navigation passed.'
 
-                check(f'interactions:{transport}:{width}', interactions)
-                if transport == 'http':
+                if not options.download_only:
+                    check(f'interactions:{transport}:{width}', interactions)
+                if (transport, width) in [('http', 1440), ('prefix', 390)]:
+                    def download_click_guard():
+                        # Keep the native browser download path while substituting
+                        # a tiny valid ZIP: the real installer is never transferred.
+                        archive = io.BytesIO()
+                        with ZipFile(archive, 'w') as package:
+                            package.writestr('download-test.txt', 'Runtime verification only.\n')
+                        name = 'ezuno-5.10.19-Installation-Package.zip'
+                        requests = []
+                        downloads = []
+                        Handler.download_fixture = {'name': name, 'body': archive.getvalue(), 'requests': requests}
+                        page.on('download', lambda download: downloads.append(download))
+                        page.goto(base + 'download/index.html', wait_until='load')
+                        page.evaluate('document.fonts.ready')
+                        button = page.locator('a[data-ezuno-download]')
+                        require(button.count() == 1, 'Expected one guarded installer link')
+                        original_label = button.text_content()
+                        require(button.get_attribute('aria-disabled') is None, 'Download starts disabled')
+                        button.scroll_into_view_if_needed()
+                        box = button.bounding_box()
+                        started = time.monotonic()
+                        with page.expect_download(timeout=3000) as first:
+                            page.mouse.click(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+                        require(first.value.suggested_filename == name, 'Native download filename changed')
+                        require(len(requests) == 1 and len(downloads) == 1, 'First click did not start exactly one native download')
+                        immediate_seconds = requests[0] - started
+                        require(immediate_seconds < 2, f'First click delayed the download by {immediate_seconds:.2f}s')
+                        require(button.get_attribute('aria-disabled') == 'true', 'Download link does not become disabled')
+                        require(button.text_content() == 'Der Download wird gleich gestartet', 'Incorrect busy label')
+                        require(button.get_attribute('aria-live') == 'polite', 'Busy status is not announced')
+                        require(button.evaluate('(node)=>getComputedStyle(node).textTransform') == 'none', 'Busy label casing is visually altered')
+                        require(page.locator('html').evaluate('(node)=>node.scrollWidth') <= width + 1, 'Busy download label causes page overflow')
+                        require(button.evaluate('(node)=>node.scrollWidth <= node.clientWidth + 1'), 'Busy label overflows its button')
+                        busy_box = button.bounding_box()
+                        require(busy_box['x'] >= 0 and busy_box['x'] + busy_box['width'] <= width + 1, 'Busy button extends outside viewport')
+                        point = (busy_box['x'] + busy_box['width'] / 2, busy_box['y'] + busy_box['height'] / 2)
+                        # locator.click intentionally waits for aria-disabled;
+                        # genuine pointer events exercise repeated user clicks.
+                        for unused in range(10):
+                            page.mouse.click(*point)
+                        button.evaluate('(node)=>node.click()')
+                        require(len(requests) == 1 and len(downloads) == 1, 'Repeated pointer/programmatic activation started duplicate downloads')
+                        busy_screenshot = REPORT.parent / f'download-busy-{width}.png'
+                        busy_screenshot.parent.mkdir(parents=True, exist_ok=True)
+                        page.screenshot(path=str(busy_screenshot), full_page=False)
+                        remaining = started + 14 - time.monotonic()
+                        if remaining > 0:
+                            page.wait_for_timeout(remaining * 1000)
+                        require(button.get_attribute('aria-disabled') == 'true', 'Download unlocked before the requested 15 seconds')
+                        require(len(requests) == 1 and len(downloads) == 1, 'A blocked activation triggered a delayed download')
+                        page.wait_for_function('''() => !document.querySelector('a[data-ezuno-download]').hasAttribute('aria-disabled')''', timeout=4000)
+                        unlocked_seconds = time.monotonic() - started
+                        require(unlocked_seconds >= 14.9, f'Download unlocked early after {unlocked_seconds:.2f}s')
+                        require(button.text_content() == original_label, 'Original download label was not restored')
+                        box = button.bounding_box()
+                        with page.expect_download(timeout=3000) as second:
+                            page.mouse.click(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+                        require(second.value.suggested_filename == name and len(requests) == 2 and len(downloads) == 2, 'Download did not work again after unlocking')
+                        return {'native_downloads': len(downloads), 'blocked_activations': 11,
+                                'first_request_seconds': round(immediate_seconds, 3),
+                                'unlock_seconds': round(unlocked_seconds, 3),
+                                'mock_zip_bytes': len(archive.getvalue()),
+                                'busy_screenshot': str(busy_screenshot.relative_to(ROOT))}
+
+                    check(f'download-click-guard:{transport}:{width}', download_click_guard)
+                    Handler.download_fixture = None
+                if transport == 'http' and not options.download_only:
                     for label, path in {
                         'hero': 'index.html',
                         'support': 'support/index.html',
@@ -254,7 +350,7 @@ def main():
                         check(f'screenshot:{label}:{width}', screenshot)
                 context.close()
 
-        for width in [1440, 390]:
+        for width in ([] if options.download_only else [1440, 390]):
             context = browser.new_context(viewport={'width': width, 'height': 844}, java_script_enabled=False)
             context.route('https://**/*', lambda route: route.abort())
             page = context.new_page()
@@ -307,17 +403,20 @@ def main():
         require(bool(links), 'No installer download link exists')
         return {'links': links, 'bytes': size, 'sha256': digest.hexdigest(), 'http_validation': 'HEAD only; no installer transfer'}
 
-    check('assembled-installer-relative-link-checksum-and-head', assembled_installer)
+    if not options.download_only:
+        check('assembled-installer-relative-link-checksum-and-head', assembled_installer)
     server.shutdown()
     def static_links():
         outcome = subprocess.run([sys.executable, str(ROOT / 'tools/check_links.py')], cwd=ROOT, capture_output=True, text=True, encoding='utf-8')
         require(outcome.returncode == 0, outcome.stdout + outcome.stderr)
         return outcome.stdout.strip()
 
-    check('all-local-resources-anchors-and-mail-links', static_links)
+    if not options.download_only:
+        check('all-local-resources-anchors-and-mail-links', static_links)
     summary = {'checks': len(results), 'passed': sum(result['passed'] for result in results), 'failed': sum(not result['passed'] for result in results), 'results': results}
     REPORT.parent.mkdir(parents=True, exist_ok=True)
-    REPORT.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    report_path = REPORT.with_name('review-download-guard.json') if options.download_only else REPORT
+    report_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     print(json.dumps({key: summary[key] for key in ['checks', 'passed', 'failed']}), flush=True)
     raise SystemExit(1 if summary['failed'] else 0)
 

@@ -59,6 +59,7 @@ def repair_content_links(soup, page):
         elif parsed.path.endswith('ezuno-5.10.19-Installation-Package.zip'):
             link['href'] = relative(INSTALLER_PATH, page)
             link['download'] = 'ezuno-5.10.19-Installation-Package.zip'
+            link['data-ezuno-download'] = ''
             link.attrs.pop('target', None)
         elif original in EXTERNAL_REPLACEMENTS:
             link['href'] = EXTERNAL_REPLACEMENTS[original]

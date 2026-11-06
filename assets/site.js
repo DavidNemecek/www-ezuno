@@ -37,6 +37,47 @@
       });
     }
 
+    document.querySelectorAll('a[data-ezuno-download]').forEach(function (button) {
+      var label = button.textContent;
+      var lockedUntil = 0;
+      var timer;
+      button.setAttribute('aria-live', 'polite');
+      button.setAttribute('aria-atomic', 'true');
+
+      function unlock() {
+        window.clearTimeout(timer);
+        lockedUntil = 0;
+        button.textContent = label;
+        button.removeAttribute('aria-disabled');
+      }
+
+      function refresh() {
+        if (lockedUntil && Date.now() >= lockedUntil) unlock();
+      }
+
+      function activate(event) {
+        if (event.button > 1) return;
+        refresh();
+        if (lockedUntil) {
+          event.preventDefault();
+          return;
+        }
+        lockedUntil = Date.now() + 15000;
+        button.textContent = 'Der Download wird gleich gestartet';
+        button.setAttribute('aria-disabled', 'true');
+        timer = window.setTimeout(unlock, 15000);
+        // Keep the first click's native download action: no additional delay.
+      }
+
+      button.addEventListener('click', activate);
+      button.addEventListener('auxclick', activate);
+      window.addEventListener('pageshow', refresh);
+      window.addEventListener('focus', refresh);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) refresh();
+      });
+    });
+
     var tabGroups = [];
     document.querySelectorAll('.features-tabs').forEach(function (group, groupIndex) {
       var panels = Array.from(group.children).filter(function (child) {
