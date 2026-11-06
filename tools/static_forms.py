@@ -1,89 +1,161 @@
-"""Reconstruct the three unavailable Contact Form 7 forms as static HTML."""
+"""Maintain the website's plain-text email templates and single destination.
+
+The historical SQL is deliberately not a build input: it also contains private
+WordPress data. Current templates are intentionally rewritten for email,
+rather than exposing fragments of the old automated form notifications.
+"""
 from html import escape
 import os
+from pathlib import Path
 import re
+from urllib.parse import quote
+
 from bs4 import BeautifulSoup
 
+
 SHORTCODE = re.compile(r'\[contact-form-7\s+id=[^\d\]]*(319|323|4449)[^\]]*\]')
-FORMS = {
-    '319': ('trial', 'Free 10-user license request', 'Request free license'),
-    '323': ('contact', 'Contact / quote request', 'Prepare contact email'),
-    '4449': ('support', 'Support request', 'Prepare support email'),
+RECIPIENT = 'ezuno@ezuno.com'
+MAIL_REQUESTS = {
+    '319': {
+        'kind': 'trial',
+        'label': 'Request free license',
+        'recipient': RECIPIENT,
+        'subject': 'ezuno - Free BASIC license request',
+        'body': '\r\n'.join([
+            'Hello ezuno team,', '',
+            'I would like to request a free BASIC license for up to 10 users.', '',
+            'Name: [Your name]',
+            'Company / organization (optional): [Your company]',
+            'Email address for the license: [Your email address]', '',
+            'Thank you.', '', 'Kind regards,', '[Your name]',
+        ]),
+    },
+    '323': {
+        'kind': 'contact',
+        'label': 'Contact sales',
+        'recipient': RECIPIENT,
+        'subject': 'ezuno - Sales and pricing enquiry',
+        'body': '\r\n'.join([
+            'Hello ezuno team,', '',
+            'I am interested in ezuno and would like to discuss the following request.', '',
+            'Request: [Quote, purchase, evaluation or reseller enquiry]',
+            'Number of users: [Required number of users]',
+            'Current evaluation (optional): [Not started / FREE BASIC / other]',
+            'Company / organization (optional): [Your company]', '',
+            'My questions or requirements:', '[Please describe your request here.]', '',
+            'Kind regards,', '[Your name]',
+        ]),
+    },
+    '4449': {
+        'kind': 'support',
+        'label': 'Contact support',
+        # Form 4449 is absent from the historical SQL. The owner explicitly
+        # selected this destination on 2026-11-06. It is not a recovered
+        # form-4449 configuration or historical field list.
+        'recipient': RECIPIENT,
+        'subject': 'ezuno - Support request',
+        'body': '\r\n'.join([
+            'Hello ezuno support team,', '',
+            'I need help with the following issue.', '',
+            'Problem:', '[What happens, and what did you expect?]', '',
+            'Steps to reproduce:', '1. [First step]', '2. [Next step]', '',
+            'ezuno version (if known): [Version]',
+            'Alfresco version (if known): [Version]',
+            'Operating system: [Windows / macOS / Linux and version]',
+            'Error message (if any): [Exact error message]', '',
+            'Kind regards,', '[Your name]',
+        ]),
+    },
 }
+FORM_IDS_BY_KIND = {spec['kind']: ident for ident, spec in MAIL_REQUESTS.items()}
 
 
-def form_html(form_id, page):
-    kind, title, button = FORMS[form_id]
-    prefix = 'ezuno-' + kind
-    fields = []
-
-    def field(name, label, *, required=False, field_type='text', autocomplete=None,
-              full=False, options=None):
-        ident = prefix + '-' + name
-        attrs = f'id="{ident}" name="{name}"'
-        if required:
-            attrs += ' required'
-        if autocomplete:
-            attrs += f' autocomplete="{autocomplete}"'
-        caption = escape(label) + (' <span aria-hidden="true">*</span>' if required else '')
-        if field_type == 'textarea':
-            control = f'<textarea {attrs} rows="5" maxlength="2000"></textarea>'
-        elif options:
-            control = f'<select {attrs}>' + ''.join(
-                f'<option>{escape(option)}</option>' for option in options) + '</select>'
-        else:
-            limit = 254 if field_type == 'email' else 160
-            control = f'<input {attrs} type="{field_type}" maxlength="{limit}">'
-        fields.append(f'<div class="ezuno-form-field{" ezuno-form-wide" if full else ""}">'
-                      f'<label for="{ident}">{caption}</label>{control}</div>')
-
-    field('name', 'Your name', required=True, autocomplete='name')
-    field('email', 'Your email address', required=True, field_type='email', autocomplete='email')
-    if kind != 'support':
-        field('company', 'Company (optional)', autocomplete='organization', full=kind == 'trial')
-    if kind == 'contact':
-        field('request', 'I am interested in', options=[
-            'Quote or sales order', 'Enterprise license', 'Reseller partnership', 'Other enquiry'])
-    if kind == 'support':
-        field('subject', 'Subject', required=True)
-        field('version', 'ezuno / Alfresco version (optional)')
-    field('message', 'Message (optional)' if kind == 'trial' else 'Your message',
-          required=kind != 'trial', field_type='textarea', full=True)
-    policy = os.path.relpath('our-privacy-policy/index.html', os.path.dirname(page) or '.')
-    return f'''<form class="ezuno-form" data-ezuno-form="{kind}" aria-label="{title}"
-        aria-describedby="{prefix}-delivery" action="mailto:ezuno@ezuno.com" method="post" enctype="text/plain">
-      <div class="ezuno-form-note ezuno-form-wide">Fields marked * are required.</div>
-      {''.join(fields)}
-      <div class="ezuno-form-note ezuno-form-wide" id="{prefix}-delivery">
-        Opens your email app with a draft addressed to <a href="mailto:ezuno@ezuno.com">ezuno@ezuno.com</a>.
-        Send the email there to complete your request. <a href="{policy}">Privacy Policy</a>.
-      </div>
-      <button class="ezuno-form-submit ezuno-form-wide" type="submit">{button}</button>
-      <noscript><div class="ezuno-form-note ezuno-form-wide">You can also email your request directly to
-        <a href="mailto:ezuno@ezuno.com">ezuno@ezuno.com</a>.</div></noscript>
-      <div class="ezuno-form-result ezuno-form-wide" hidden>
-        <div class="ezuno-form-status" role="status" aria-live="polite"></div>
-        <div class="ezuno-form-actions">
-          <a class="ezuno-form-open" href="mailto:ezuno@ezuno.com">Open email draft again</a>
-          <button class="ezuno-form-copy" type="button">Copy request</button>
-        </div>
-        <label for="{prefix}-draft">Your email draft (copy manually if needed)</label>
-        <textarea id="{prefix}-draft" class="ezuno-form-draft" rows="8" readonly></textarea>
-      </div>
-    </form>'''
+def mailto_href(form_id):
+    """Return an RFC 6068-style link with individually encoded query values."""
+    spec = MAIL_REQUESTS[str(form_id)]
+    return ('mailto:' + spec['recipient'] + '?subject=' +
+            quote(spec['subject'], safe='') + '&body=' +
+            quote(spec['body'], safe=''))
 
 
-def reconstruct_forms(soup, page):
+def form_html(form_id, page=None):
+    """Retain the old exporter API, while producing only an email button."""
+    spec = MAIL_REQUESTS[str(form_id)]
+    return ('<div class="ezuno-mail-actions">'
+            '<a class="ezuno-mail-button" data-ezuno-mail="' + spec['kind'] +
+            '" href="' + escape(mailto_href(form_id), quote=True) + '">' +
+            escape(spec['label']) + '</a></div>')
+
+
+def replace_request_ctas(soup, page=None):
+    """Keep templates at former forms; other CTAs navigate to those sections."""
     count = 0
+    root = Path(__file__).resolve().parent.parent
+    current = root / (page or 'index.html')
+    for link in soup.find_all('a', href=True):
+        label = link.get_text(' ', strip=True).casefold()
+        ident = FORM_IDS_BY_KIND.get(link.get('data-ezuno-mail'))
+        if link.find_parent(class_='ezuno-mail-actions'):
+            if ident:
+                link['href'] = mailto_href(ident)
+                count += 1
+            continue
+        if label in ('get 10 users free', 'request free license'):
+            ident = '319'
+        elif label in ('get order form', 'get quote', 'contact sales'):
+            ident = '323'
+        if ident and '@' not in label:
+            target = 'support/index.html' if ident == '4449' else 'index.html'
+            href = os.path.relpath(root / target, current.parent).replace('\\', '/')
+            if target == 'index.html':
+                fragment = 'subscribe' if ident == '319' else 'contact'
+                href = ('#' + fragment) if (current.name == 'index.html' and soup.find(id=fragment)) else href + '#' + fragment
+            link['href'] = href
+            link.attrs.pop('data-ezuno-mail', None)
+            classes = [name for name in link.get('class', []) if name != 'ezuno-mail-button']
+            if classes:
+                link['class'] = classes
+            else:
+                link.attrs.pop('class', None)
+    return count
+
+
+def normalize_email_links(soup):
+    """Only former forms have drafts; ordinary contact links remain plain."""
+    for link in soup.find_all('a', href=True):
+        href = link['href']
+        if not href.lower().startswith('mailto:'):
+            continue
+        if link.find_parent(class_='ezuno-mail-actions'):
+            ident = FORM_IDS_BY_KIND[link['data-ezuno-mail']]
+            link['href'] = mailto_href(ident)
+        else:
+            link['href'] = 'mailto:' + RECIPIENT
+            link.attrs.pop('data-ezuno-mail', None)
+        if re.fullmatch(r'[^\s@]+@[^\s@]+', link.get_text(' ', strip=True)):
+            link.clear()
+            link.append(RECIPIENT)
+
+
+def reconstruct_forms(soup, page=None):
+    """Replace both original CF7 shortcodes and the previous static forms."""
+    count = 0
+    for form in list(soup.select('form[data-ezuno-form]')):
+        ident = FORM_IDS_BY_KIND[form['data-ezuno-form']]
+        fragment = BeautifulSoup(form_html(ident, page), 'html.parser')
+        form.replace_with(fragment.div)
+        count += 1
     for node in list(soup.find_all(string=SHORTCODE)):
         parts = SHORTCODE.split(str(node))
         node.parent['class'] = list(node.parent.get('class', [])) + ['ezuno-form-section']
         for index, part in enumerate(parts):
             if index % 2:
                 fragment = BeautifulSoup(form_html(part, page), 'html.parser')
-                node.insert_before(fragment.form)
+                node.insert_before(fragment.div)
                 count += 1
             elif part.strip():
                 node.insert_before(part)
         node.extract()
+    replace_request_ctas(soup, page)
+    normalize_email_links(soup)
     return count

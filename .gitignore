@@ -2,3 +2,7 @@
 __pycache__/
 .venv/
 node_modules/
+_site/
+releases/*.zip
+releases/*.zip.sha256
+releases/*.assembling

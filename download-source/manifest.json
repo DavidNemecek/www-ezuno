@@ -1,0 +1,54 @@
+{
+  "format": 1,
+  "filename": "ezuno-5.10.19-Installation-Package.zip",
+  "size": 411970655,
+  "sha256": "f0be70bc5429b551ad54cec24c579d4a3a8b9c865b81b0cbf7bb767877e672c3",
+  "part_size": 50331648,
+  "parts": [
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part001",
+      "size": 50331648,
+      "sha256": "28675ac3f39aec76dd7c0ab6320ca9ecc231db1553ba8f72a6fa7975b8977d8d"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part002",
+      "size": 50331648,
+      "sha256": "4133b4da17010846e954b8186aa8b55cf719845df72fb9d2f65629cb0ad7b1c6"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part003",
+      "size": 50331648,
+      "sha256": "68f5b7e989cf0bdbcecc33910ef0343ebce90d9fdcf329c599bb8007c87762a6"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part004",
+      "size": 50331648,
+      "sha256": "1ca824acd57f4f2b7716923c1c95f9fffa39c1ff0597caa2af50b80416676df1"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part005",
+      "size": 50331648,
+      "sha256": "a446547aeb2d229c4df02f1d0a22750b149391ff93c617f4758c63257bb8662d"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part006",
+      "size": 50331648,
+      "sha256": "7522b92e1bdb8cd933b2a423e5745148935c89279fea8922ecccb3fb8bcab676"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part007",
+      "size": 50331648,
+      "sha256": "322022e5dd51dd3b585b612864785966d357cd58945fae0e391a67e33e575c97"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part008",
+      "size": 50331648,
+      "sha256": "84094a4a4ffdc41c6f4567c09e41d1f64144e54c909efcfbea4063957f199493"
+    },
+    {
+      "file": "ezuno-5.10.19-Installation-Package.zip.part009",
+      "size": 9317471,
+      "sha256": "9e15cce4aa3efbfe1cbbf71b80870d75c6f0c50c193b5e441051aa8e00d2a6d3"
+    }
+  ]
+}
